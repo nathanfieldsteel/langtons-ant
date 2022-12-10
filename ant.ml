@@ -2,7 +2,9 @@ open Camlimages
 open Random
 open Png
 
-let rule = Sys.argv.(0)
+let rule = Sys.argv.(1)
+let num_frames = Sys.argv.(2)
+let num_steps = Sys.argv.(3)
 
 let color_list =
   let open Random in
@@ -174,3 +176,35 @@ let rec steps i s =
   do
     step s
   done
+
+let animation_frames rule fn frames gw gh iw ih =
+  Sys.mkdir rule 0o777;
+  let fn_length = frames
+                  |> float_of_int
+                  |> log10
+                  |> Float.floor
+                  |> (+.) 1.
+                  |> int_of_float in
+  let filename i =
+    let num = string_of_int i in
+    let k = String.length num in
+    "00"^(String.make (fn_length - k) '0') ^ num in
+  let s = initialize_state ~gw:gw ~gh:gh ~iw:iw ~ih:ih rule in
+  save_image (rule ^ "/" ^ (filename 0) ^ ".png") s;
+  for j=1 to frames
+  do
+    steps (fn j) s;
+    save_image (rule ^ "/" ^ (filename j) ^ ".png") s;
+  done;
+  Sys.chdir rule;
+  ignore (Sys.command ("ffmpeg -f image2 -pattern_type glob -framerate 60 -i '00*.png' -s 3840x2160 " ^ rule ^ ".mp4"));
+  Sys.chdir "..";;
+
+let main () =
+
+  print_endline rule;
+  num_frames |> print_endline;
+  num_steps |> print_endline;;
+
+main ()
+  
