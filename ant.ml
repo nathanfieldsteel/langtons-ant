@@ -149,4 +149,28 @@ let step s =
 
 let save_image fn s =
   let output = Images.Rgb24 s.img in
-  Images.save fn (Some Png) [] output;;
+  Images.save fn (Some Png) [] output
+
+let step s =
+
+  let (i,j) = s.ant.position in
+
+  let gw = s.grid_width in
+  let gh = s.grid_height in
+  
+  if (0 <= i && i < gw && 0 <= j && j < gh)
+  then (let c = s.grid.(i).(j) in
+        let t = s.ant.rule.(c) in
+
+        rotate t s.ant;
+
+        change_color s;
+
+        move s.ant)
+  else ()
+
+let rec steps i s =
+  for j = 1 to i
+  do
+    step s
+  done
