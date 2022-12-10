@@ -146,3 +146,7 @@ let step s =
 
         move s.ant)
   else ()
+
+let save_image fn s =
+  let output = Images.Rgb24 s.img in
+  Images.save fn (Some Png) [] output;;
