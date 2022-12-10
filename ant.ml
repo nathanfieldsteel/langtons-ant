@@ -1,3 +1,23 @@
+open Camlimages
+open Random
+open Png
+
+let rule = Sys.argv.(0)
+
+let color_list =
+  let open Random in
+  Random.self_init ();
+  let open Color in
+  let rec random_colors n =
+    match n with
+    | 1 -> [{r=0;g=0;b=0}]
+    | n -> {r = int 256;g=int 256;b=int 256} :: (random_colors (n-1)) in
+  rule
+  |> String.length
+  |> random_colors
+  |> List.rev
+  |> Array.of_list
+
 type position = int * int
 
 type direction = int * int
@@ -64,3 +84,65 @@ let initialize_state ?(gw=1000) ?(gh=1000) ?(iw=1000) ?(ih=1000) rule_str =
   let img = Rgb24.make img_width img_height c in
 
   {colors; grid_width; grid_height; grid; ant; img_width; img_height; img}
+
+let rotate t a =
+  let (u,v) = a.direction in
+  match t with
+  | Left -> a.direction <- (v, -u)
+  | UTurn -> a.direction <- (-u, -v)
+  | Right -> a.direction <- (-v, u)
+  | Straight -> a.direction <- (u, v)
+
+let move a =
+  let (i,j) = a.position in
+  let (u,v) = a.direction in
+  a.position <- (i + u, j + v)
+
+let in_img i j s =
+  let gw = s.grid_width in
+  let gh = s.grid_height in
+  let iw = s.img_width in
+  let ih = s.img_height in
+  
+  (gw - iw) / 2 <= i
+  && i < iw + (gw - iw)/2
+  && (gh - ih) / 2 <= j
+  && j < ih + (gh - ih) / 2
+
+let img_coords i j s =
+  let gw = s.grid_width in
+  let gh = s.grid_height in
+  let iw = s.img_width in
+  let ih = s.img_height in
+  (i - ((gw - iw)/2),
+   j - ((gh - ih)/2))
+
+let change_color s =
+  let (i,j) = s.ant.position in
+  let color = s.grid.(i).(j) in
+  let next_color = if color = (s.colors - 1)
+                   then 0
+                   else color + 1 in
+  s.grid.(i).(j) <- next_color;
+  if in_img i j s
+  then (let (p,q) = img_coords i j s in
+        Rgb24.set s.img p q color_list.(next_color))
+  else ()
+
+let step s =
+
+  let (i,j) = s.ant.position in
+
+  let gw = s.grid_width in
+  let gh = s.grid_height in
+  
+  if (0 <= i && i < gw && 0 <= j && j < gh)
+  then (let c = s.grid.(i).(j) in
+        let t = s.ant.rule.(c) in
+
+        rotate t s.ant;
+
+        change_color s;
+
+        move s.ant)
+  else ()
