@@ -3,8 +3,8 @@ open Random
 open Png
 
 let rule = Sys.argv.(1)
-let num_frames = Sys.argv.(2)
-let num_steps = Sys.argv.(3)
+let num_frames = Sys.argv.(2) |> int_of_string
+let num_steps = Sys.argv.(3) |> int_of_string
 
 let color_list =
   let open Random in
@@ -201,10 +201,11 @@ let animation_frames rule fn frames gw gh iw ih =
   Sys.chdir "..";;
 
 let main () =
-
-  print_endline rule;
-  num_frames |> print_endline;
-  num_steps |> print_endline;;
+  let s = num_steps in
+  let f = num_frames in
+  let coeff = 1 + (2 * s) / (f*f + f) in
+  let f i = coeff * i in
+  animation_frames rule f num_frames 20000 20000 (2*3840) (2*2160);;
 
 main ()
   
