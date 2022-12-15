@@ -6,6 +6,10 @@ let rule = Sys.argv.(1)
 let num_frames = Sys.argv.(2) |> int_of_string
 let num_steps = Sys.argv.(3) |> int_of_string
 
+let ffmpeg_call = "ffmpeg -f image2 -pattern_type glob -framerate 60 -i '00*.png' -s 3840x2160 "
+                  ^ rule
+                  ^ ".mp4"
+
 let color_list =
   let open Random in
   Random.self_init ();
@@ -41,15 +45,11 @@ type ant = {
 type grid = int array array
 
 type state = {
-
     colors : int;
-    
     grid_width : int;
     grid_height : int;
     grid : grid;
-
     ant : ant;
-    
     img_width : int;
     img_height : int;
     img: Rgb24.t
@@ -177,9 +177,15 @@ let rec steps i s =
     step s
   done
 
-let animation_frames rule fn frames gw gh iw ih =
+
+
+let animation_frames gw gh iw ih =
+  let s = num_steps in
+  let f = num_frames in
+  let coeff = 1 + (2 * s) / (f*f + f) in
+  let frames i = coeff * i in
   Sys.mkdir rule 0o777;
-  let fn_length = frames
+  let fn_length = f
                   |> float_of_int
                   |> log10
                   |> Float.floor
@@ -189,23 +195,16 @@ let animation_frames rule fn frames gw gh iw ih =
     let num = string_of_int i in
     let k = String.length num in
     "00"^(String.make (fn_length - k) '0') ^ num in
-  let s = initialize_state ~gw:gw ~gh:gh ~iw:iw ~ih:ih rule in
-  save_image (rule ^ "/" ^ (filename 0) ^ ".png") s;
-  for j=1 to frames
+  let state = initialize_state ~gw:gw ~gh:gh ~iw:iw ~ih:ih rule in
+  save_image (rule ^ "/" ^ (filename 0) ^ ".png") state;
+  for j=1 to f
   do
-    steps (fn j) s;
-    save_image (rule ^ "/" ^ (filename j) ^ ".png") s;
+    steps (frames j) state;
+    save_image (rule ^ "/" ^ (filename j) ^ ".png") state;
   done;
   Sys.chdir rule;
-  ignore (Sys.command ("ffmpeg -f image2 -pattern_type glob -framerate 60 -i '00*.png' -s 3840x2160 " ^ rule ^ ".mp4"));
+  ignore (Sys.command ffmpeg_call);
   Sys.chdir "..";;
 
-let main () =
-  let s = num_steps in
-  let f = num_frames in
-  let coeff = 1 + (2 * s) / (f*f + f) in
-  let f i = coeff * i in
-  animation_frames rule f num_frames 20000 20000 (2*3840) (2*2160);;
+animation_frames 20000 20000 (2*3840) (2*2160);
 
-main ()
-  
