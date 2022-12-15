@@ -2,6 +2,8 @@
 
 This is the repo for the code I used to make [this video](https://www.youtube.com/watch?v=_77IJkAHhaE).
 
+Be aware that I didn't really write this code with anyone but myself in mind. So it's not particularly user-friendly.
+
 ## Setting things up
 
 To compile, you'll need [OCaml](https://ocaml.org/) of course, and you'll need to have the [CamlImages](https://opam.ocaml.org/packages/camlimages/) package installed. Compile with:
